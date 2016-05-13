@@ -59,8 +59,36 @@ InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 
+Var UNINSTALL_PROG
+Var OLD_VER
+Var OLD_PATH
 Function .onInit
   !insertmacro MUI_LANGDLL_DISPLAY
+
+  ClearErrors
+   ReadRegStr $UNINSTALL_PROG ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
+   IfErrors  done
+
+   ReadRegStr $OLD_VER ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion"
+   MessageBox MB_YESNOCANCEL|MB_ICONQUESTION \
+     "检测到本机已经安装了 ${PRODUCT_NAME} $OLD_VER。\
+     $\n$\n是否先卸载已安装的版本？" \
+       /SD IDYES \
+       IDYES uninstall \
+       IDNO done
+   Abort
+
+ uninstall:
+   StrCpy $OLD_PATH $UNINSTALL_PROG -10
+
+
+   ExecWait '"$UNINSTALL_PROG" /S _?=$OLD_PATH' $0
+   DetailPrint "uninst.exe returned $0"
+   Delete "$UNINSTALL_PROG"
+   RMDir $OLD_PATH
+
+
+ done:
 FunctionEnd
 
 Section "MainSection" SEC01
